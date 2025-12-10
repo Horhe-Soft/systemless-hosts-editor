@@ -5,7 +5,7 @@ It allows you to view, modify, and manage the host entries directly from a user-
 
 <img width="288" height="576" alt="screenshot" src="https://github.com/user-attachments/assets/52e6a634-9f6b-40fa-8c18-9e8d8c76737e" />
 
-Prerequisites:
+## Prerequisites:
 * Rooted Android device;
 * Magisk installed;
 * The "Systemless Hosts" Magisk module must be installed and active.
