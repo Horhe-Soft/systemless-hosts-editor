@@ -1,5 +1,5 @@
 # Hosts editor for "Systemless Hosts"
-This is a simple Android application designed to provide a quick and easy way to manage your host file entries, using the Magisk Systemless Hosts module.
+This is a simple Android application designed to provide a quick and easy way to manage your host file entries, using the Magisk "Systemless Hosts" module.
 
 It allows you to view, modify, and manage the host entries directly from a user-friendly interface; export the current hosts file content into a standard .txt document for backup or sharing.
 
