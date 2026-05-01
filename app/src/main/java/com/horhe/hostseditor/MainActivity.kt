@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Menu
@@ -44,6 +45,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.Dialog
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +84,9 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
     }
 
     val context = LocalContext.current
+    var showSavedDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -78,12 +95,36 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
         }
     }
 
+    var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            pendingImportUri = uri
+            showImportDialog = true // Показываем диалог выбора (Заменить/Добавить)
+        }
+    }
+
     var isSaveButtonEnabled = true
     var isSaved = false
-    var showSavedDialog by remember { mutableStateOf(false) }
 
-    if (showSavedDialog == true) {
+    if (showSavedDialog) {
         SavedDialog(onConfirm = { showSavedDialog = false }, onDismiss = { showSavedDialog = false })
+    }
+
+    if (showImportDialog && pendingImportUri != null) {
+        ImportDialog(
+            onDismiss = {
+                showImportDialog = false
+                pendingImportUri = null
+                        },
+            onConfirm = {
+                selectedMode ->
+                viewModel.importFromUri(context, pendingImportUri!!,selectedMode)
+                showImportDialog = false
+                pendingImportUri = null
+                       }
+        )
     }
 
     Scaffold {
@@ -102,7 +143,7 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
                     exportLauncher.launch("hosts_export.txt")
                 },
                     onClickImport = {
-                        Toast.makeText(context, "Currently not available", Toast.LENGTH_LONG).show()
+                        importLauncher.launch(arrayOf("*/*"))
                     }
                 )
                 Text("Systemless hosts edit", fontSize = 24.sp)
@@ -143,7 +184,7 @@ fun SaveButton(onClick: () -> Unit,isSaved: Boolean, modifier: Modifier = Modifi
         enabled = isEnabled,
         modifier = modifier
     ) {
-        if (isSaved == true) {
+        if (isSaved) {
             Icon(
                 imageVector = Icons.Filled.Done,
                 contentDescription = "Already saved"
@@ -210,6 +251,126 @@ fun SavedDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
             }
         }
     )
+}
+
+@Composable
+fun ImportDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
+    var isAppend by remember { mutableStateOf(true) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp,
+            modifier = Modifier.width(IntrinsicSize.Max)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Choose mode:",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "How should your file be imported?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ImportOptionItem(
+                    title = "Add to the end",
+                    description = "Your file will be appended to the end of existing file",
+                    selected = isAppend,
+                    onClick = { isAppend = true }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ImportOptionItem(
+                    title = "Replace",
+                    description = "Your current file will be replaced with chosen one",
+                    selected = !isAppend,
+                    onClick = { isAppend = false }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Cancel", fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = { onConfirm(isAppend) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Apply", fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ImportOptionItem(
+    title: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 //----------PREVIEW-----------
