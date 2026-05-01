@@ -3,9 +3,9 @@ This is a simple Android application designed to provide a quick and easy way to
 
 It allows you to view, modify, and manage the host entries directly from a user-friendly interface; export the current hosts file content into a standard .txt document for backup or sharing.
 
-<img width="288" height="576" alt="screenshot" src="https://github.com/user-attachments/assets/52e6a634-9f6b-40fa-8c18-9e8d8c76737e" />
-
 Import is available in 2 different modes.
+
+<img width="288" height="576" alt="screenshot" src="https://github.com/user-attachments/assets/52e6a634-9f6b-40fa-8c18-9e8d8c76737e" />
 
 <img width="288" height="576" alt="screenshot-2" src="https://github.com/user-attachments/assets/19955358-3f42-406a-91db-62c2584d41d8" />
 
