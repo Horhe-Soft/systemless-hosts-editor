@@ -52,10 +52,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.Dialog
 
@@ -86,6 +88,7 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
     val context = LocalContext.current
     var showSavedDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
@@ -127,6 +130,13 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
         )
     }
 
+    if (showAboutDialog) {
+        AboutDialog(
+            onConfirm = { showAboutDialog = false },
+            onDismiss = { showAboutDialog = false }
+            )
+    }
+
     Scaffold {
         innerPadding ->
         Column (
@@ -144,6 +154,9 @@ fun EditorScreen(viewModel: FileViewModel = viewModel()) {
                 },
                     onClickImport = {
                         importLauncher.launch(arrayOf("*/*"))
+                    },
+                    onClickAbout = {
+                        showAboutDialog = true
                     }
                 )
                 Text("Systemless hosts edit", fontSize = 24.sp)
@@ -199,7 +212,7 @@ fun SaveButton(onClick: () -> Unit,isSaved: Boolean, modifier: Modifier = Modifi
 }
 
 @Composable
-fun FuncButton(onClickExport: () -> Unit, onClickImport: () -> Unit, modifier: Modifier = Modifier) {
+fun FuncButton(onClickExport: () -> Unit, onClickImport: () -> Unit, onClickAbout: () -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
     Box(
         modifier = modifier
@@ -219,6 +232,11 @@ fun FuncButton(onClickExport: () -> Unit, onClickImport: () -> Unit, modifier: M
             DropdownMenuItem(
                 text = { Text("Import") },
                 onClick = onClickImport
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text("About") },
+                onClick = onClickAbout
             )
         }
     }
@@ -339,6 +357,58 @@ fun ImportDialog(onDismiss: () -> Unit, onConfirm: (Boolean) -> Unit) {
 }
 
 @Composable
+fun AboutDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val versionName = LocalContext.current.packageManager.getPackageInfo(LocalContext.current.packageName, 0).versionName
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text("About App")
+                HorizontalDivider(thickness = 2.dp)
+            }
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("App version:")
+                    Text("$versionName")
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Source:")
+                    VisitGitHubButton()
+                }
+            }
+        },
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Spacer(modifier = Modifier.weight(1f))
+                Button(onClick = onConfirm) {
+                    Text("Close")
+                }
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+    )
+}
+
+@Composable
 fun ImportOptionItem(
     title: String,
     description: String,
@@ -370,6 +440,23 @@ fun ImportOptionItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+fun VisitGitHubButton() {
+    val uriHandler = LocalUriHandler.current
+
+    IconButton(
+        onClick = {
+            uriHandler.openUri("https://github.com/Horhe-Soft/systemless-hosts-editor")
+        }
+    ) {
+        Icon(
+            painterResource(id = R.drawable.github_mark),
+            contentDescription = "GitHub link"
+        )
+
     }
 }
 
